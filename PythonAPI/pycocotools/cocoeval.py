@@ -334,6 +334,7 @@ class COCOeval:
         precision   = -np.ones((T,R,K,A,M)) # -1 for the precision of absent categories
         recall      = -np.ones((T,K,A,M))
         scores      = -np.ones((T,R,K,A,M))
+        tp          = -np.ones((T,R,K,A,M))
 
         # create dictionary for future indexing
         _pe = self._paramsEval
@@ -408,6 +409,7 @@ class COCOeval:
                             pass
                         precision[t,:,k,a,m] = np.array(q)
                         scores[t,:,k,a,m] = np.array(ss)
+                        tp[t,:,k,a,m] = tp[-1]
         self.eval = {
             'params': p,
             'counts': [T, R, K, A, M],
@@ -415,6 +417,7 @@ class COCOeval:
             'precision': precision,
             'recall':   recall,
             'scores': scores,
+            'tp': tp,
         }
         toc = time.time()
         print('DONE (t={:0.2f}s).'.format( toc-tic))
