@@ -334,7 +334,8 @@ class COCOeval:
         precision   = -np.ones((T,R,K,A,M)) # -1 for the precision of absent categories
         recall      = -np.ones((T,K,A,M))
         scores      = -np.ones((T,R,K,A,M))
-        tp          = -np.ones((T,R,K,A,M))
+        true_positives = -np.ones((T,R,K,A,M))
+        false_positives = -np.ones((T,R,K,A,M))
 
         # create dictionary for future indexing
         _pe = self._paramsEval
@@ -409,7 +410,8 @@ class COCOeval:
                             pass
                         precision[t,:,k,a,m] = np.array(q)
                         scores[t,:,k,a,m] = np.array(ss)
-                        tp[t,:,k,a,m] = tp[-1]
+                        true_positives[t,:,k,a,m] = tp[-1]
+                        false_positives[t,:,k,a,m] = fp[-1]
         self.eval = {
             'params': p,
             'counts': [T, R, K, A, M],
@@ -417,7 +419,8 @@ class COCOeval:
             'precision': precision,
             'recall':   recall,
             'scores': scores,
-            'tp': tp,
+            'true_positives': true_positives,
+            'false_positives': false_positives,
         }
         toc = time.time()
         print('DONE (t={:0.2f}s).'.format( toc-tic))
@@ -440,11 +443,18 @@ class COCOeval:
             if ap == 1:
                 # dimension of precision: [TxRxKxAxM]
                 s = self.eval['precision']
+                tp = self.eval['true_positives']
+                fp = self.eval['false_positives']
                 # IoU
                 if iouThr is not None:
                     t = np.where(iouThr == p.iouThrs)[0]
                     s = s[t]
+                    tp = tp[t]
+                    fp = fp[t]
                 s = s[:,:,:,aind,mind]
+                tp = tp[:,:,:,aind,mind]
+                fp = fp[:,:,:,aind,mind]
+                print(f'TP: {np.mean(tp)}, FP: {np.mean(fp)}')
             else:
                 # dimension of recall: [TxKxAxM]
                 s = self.eval['recall']
