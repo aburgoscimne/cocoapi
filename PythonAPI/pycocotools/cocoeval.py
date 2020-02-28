@@ -333,9 +333,11 @@ class COCOeval:
         M           = len(p.maxDets)
         precision   = -np.ones((T,R,K,A,M)) # -1 for the precision of absent categories
         recall      = -np.ones((T,K,A,M))
+        f1          = -np.ones((T,R,K,A,M))
         scores      = -np.ones((T,R,K,A,M))
-        true_positives = -np.ones((T,R,K,A,M))
+        true_positives  = -np.ones((T,R,K,A,M))
         false_positives = -np.ones((T,R,K,A,M))
+        false_negatives = -np.ones((T,R,K,A,M))
 
         # create dictionary for future indexing
         _pe = self._paramsEval
@@ -371,7 +373,7 @@ class COCOeval:
                     dtm  = np.concatenate([e['dtMatches'][:,0:maxDet] for e in E], axis=1)[:,inds]
                     dtIg = np.concatenate([e['dtIgnore'][:,0:maxDet]  for e in E], axis=1)[:,inds]
                     gtIg = np.concatenate([e['gtIgnore'] for e in E])
-                    npig = np.count_nonzero(gtIg==0 )
+                    npig = np.count_nonzero(gtIg==0)
                     if npig == 0:
                         continue
                     tps = np.logical_and(               dtm,  np.logical_not(dtIg) )
@@ -382,6 +384,7 @@ class COCOeval:
                     for t, (tp, fp) in enumerate(zip(tp_sum, fp_sum)):
                         tp = np.array(tp)
                         fp = np.array(fp)
+                        fn = np.abs(npig - tp)
                         nd = len(tp)
                         rc = tp / npig
                         pr = tp / (fp+tp+np.spacing(1))
@@ -409,18 +412,22 @@ class COCOeval:
                         except:
                             pass
                         precision[t,:,k,a,m] = np.array(q)
+                        f1[t,:,k,a,m] = 2 * precision * recall / (precision + recall)
                         scores[t,:,k,a,m] = np.array(ss)
                         true_positives[t,:,k,a,m] = tp[-1]
                         false_positives[t,:,k,a,m] = fp[-1]
+                        false_negatives[t,:,k,a,m] = fn[-1]
         self.eval = {
             'params': p,
             'counts': [T, R, K, A, M],
             'date': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             'precision': precision,
-            'recall':   recall,
+            'recall': recall,
+            'f1': f1,
             'scores': scores,
             'true_positives': true_positives,
             'false_positives': false_positives,
+            'false_negatives': false_negatives,
         }
         toc = time.time()
         print('DONE (t={:0.2f}s).'.format( toc-tic))
@@ -445,16 +452,19 @@ class COCOeval:
                 s = self.eval['precision']
                 tp = self.eval['true_positives']
                 fp = self.eval['false_positives']
+                fn = self.eval['false_negatives']
                 # IoU
                 if iouThr is not None:
                     t = np.where(iouThr == p.iouThrs)[0]
                     s = s[t]
                     tp = tp[t]
                     fp = fp[t]
+                    fn = fn[t]
                 s = s[:,:,:,aind,mind]
                 tp = tp[:,:,:,aind,mind]
                 fp = fp[:,:,:,aind,mind]
-                print(f'TP: {np.mean(tp)}, FP: {np.mean(fp)}')
+                fn = fn[:,:,:,aind,mind]
+                print(f'TP: {np.mean(tp)}, FP: {np.mean(fp)}, FN: {np.mean(fn)}')
             else:
                 # dimension of recall: [TxKxAxM]
                 s = self.eval['recall']
