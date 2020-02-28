@@ -333,7 +333,6 @@ class COCOeval:
         M           = len(p.maxDets)
         precision   = -np.ones((T,R,K,A,M)) # -1 for the precision of absent categories
         recall      = -np.ones((T,K,A,M))
-        f1          = -np.ones((T,R,K,A,M))
         scores      = -np.ones((T,R,K,A,M))
         true_positives  = -np.ones((T,R,K,A,M))
         false_positives = -np.ones((T,R,K,A,M))
@@ -412,7 +411,6 @@ class COCOeval:
                         except:
                             pass
                         precision[t,:,k,a,m] = np.array(q)
-                        f1[t,:,k,a,m] = 2 * precision * recall / (precision + recall)
                         scores[t,:,k,a,m] = np.array(ss)
                         true_positives[t,:,k,a,m] = tp[-1]
                         false_positives[t,:,k,a,m] = fp[-1]
@@ -423,7 +421,6 @@ class COCOeval:
             'date': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             'precision': precision,
             'recall': recall,
-            'f1': f1,
             'scores': scores,
             'true_positives': true_positives,
             'false_positives': false_positives,
